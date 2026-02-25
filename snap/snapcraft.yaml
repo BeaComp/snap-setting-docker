@@ -1,0 +1,47 @@
+name: setting-docker-smartlight
+base: core24
+version: '1.0'
+summary: Orquestrador de sensores via Docker
+description: Inicia a stack do Docker Compose para leitura de sensores após o boot.
+grade: stable
+confinement: strict
+
+environment:
+  DOCKER_CONFIG: $SNAP_COMMON/.docker
+  PATH: $SNAP/docker-bin:$SNAP/docker-bin/bin:$PATH
+  PYTHONPATH:    $SNAP/docker-bin/lib/python3.6/site-packages:$PYTHONPATH
+
+platforms:
+  rpi:
+    build-on: arm64
+    build-for: arm64
+  rpi-amd64:
+    build-on: amd64
+    build-for: arm64
+
+apps:
+  simple:
+    command: usr/bin/tocker_simple.sh
+    daemon: simple
+    plugs: [docker, docker-executables]
+
+parts:
+  copy-script:
+    plugin: dump
+    source: src/
+    override-build: |
+      snapcraftctl build
+      mkdir -p $CRAFT_PART_INSTALL/docker-bin
+      chmod +x $CRAFT_PART_INSTALL/usr/bin/tocker_simple.sh
+  
+  copy-compose:
+    plugin: dump
+    source: compose/
+    organize:
+      '*': compose/
+
+plugs:
+  docker-executables:
+    interface: content
+    target: $SNAP/docker-bin
+    default-provider: docker
